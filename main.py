@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -128,12 +128,13 @@ async def analyze(req: AnalyzeRequest):
 
 
 @app.post("/transcribe")
-async def transcribe(audio: UploadFile = File(...)):
+async def transcribe(audio: UploadFile = File(...), language: str = Form("fr")):
     try:
         audio_bytes = await audio.read()
         transcript = openai_client.audio.transcriptions.create(
             model="whisper-1",
             file=(audio.filename, audio_bytes, audio.content_type),
+            language=language,
         )
         return {"transcript": transcript.text}
     except Exception as e:

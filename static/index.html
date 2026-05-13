@@ -146,6 +146,31 @@
       letter-spacing: 0.5px;
     }
 
+    .lang-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .lang-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1.5px solid #ddd;
+      background: white;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-mid);
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .lang-btn.active {
+      background: var(--terracotta);
+      border-color: var(--terracotta);
+      color: white;
+    }
+
     .question-row {
       display: flex;
       gap: 8px;
@@ -371,6 +396,11 @@
 
   <div class="question-section">
     <div class="question-label">Ask Ritab something (optional)</div>
+    <div class="lang-row">
+      <button class="lang-btn active" data-lang="fr" onclick="setLang(this)">FR</button>
+      <button class="lang-btn" data-lang="ar" onclick="setLang(this)">عر</button>
+      <button class="lang-btn" data-lang="en" onclick="setLang(this)">EN</button>
+    </div>
     <div class="question-row">
       <input
         type="text"
@@ -429,6 +459,13 @@
   let currentResponseText = "";
   let recognition = null;
   let isRecording = false;
+  let selectedLang = "fr";
+
+  function setLang(btn) {
+    document.querySelectorAll(".lang-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedLang = btn.dataset.lang;
+  }
 
   // Image selection & compression
   document.getElementById("cameraInput").addEventListener("change", function (e) {
@@ -573,6 +610,7 @@
         try {
           const form = new FormData();
           form.append("audio", blob, "recording.webm");
+          form.append("language", selectedLang);
           const res = await fetch("/transcribe", { method: "POST", body: form });
           if (!res.ok) throw new Error("Transcription failed");
           const data = await res.json();
