@@ -1,9 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import anthropic
+import openai
 import os
 from dotenv import load_dotenv
 
@@ -19,6 +19,7 @@ app.add_middleware(
 )
 
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 SYSTEM_PROMPT = """You are Ritab, a warm and passionate local guide from Rabat, Morocco. You grew up in this city and know every corner of it — the history, the gossip, the best spots, the hidden stories. You speak like a friend, not a textbook. You're a woman, funny, real, and full of love for your city.
 
@@ -122,6 +123,19 @@ async def analyze(req: AnalyzeRequest):
 
     except anthropic.APIError as e:
         raise HTTPException(status_code=502, detail=f"Claude API error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/transcribe")
+async def transcribe(audio: UploadFile = File(...)):
+    try:
+        audio_bytes = await audio.read()
+        transcript = openai_client.audio.transcriptions.create(
+            model="whisper-1",
+            file=(audio.filename, audio_bytes, audio.content_type),
+        )
+        return {"transcript": transcript.text}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
