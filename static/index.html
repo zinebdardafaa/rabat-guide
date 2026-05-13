@@ -146,30 +146,6 @@
       letter-spacing: 0.5px;
     }
 
-    .lang-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 4px;
-    }
-
-    .lang-btn {
-      padding: 6px 14px;
-      border-radius: 20px;
-      border: 1.5px solid #ddd;
-      background: white;
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      color: var(--text-mid);
-      transition: all 0.15s;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .lang-btn.active {
-      background: var(--terracotta);
-      border-color: var(--terracotta);
-      color: white;
-    }
 
     .question-row {
       display: flex;
@@ -191,33 +167,6 @@
     .question-input:focus { border-color: var(--terracotta); }
     .question-input::placeholder { color: #bbb; }
 
-    .btn-mic {
-      width: 46px;
-      height: 46px;
-      border-radius: 50%;
-      border: 1.5px solid #ddd;
-      background: white;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: all 0.2s;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .btn-mic.recording {
-      background: #fee2e2;
-      border-color: #ef4444;
-      animation: pulse 1s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.08); }
-    }
-
-    .btn-mic svg { width: 20px; height: 20px; }
 
     /* Submit button */
     .btn-submit {
@@ -396,26 +345,13 @@
 
   <div class="question-section">
     <div class="question-label">Ask Ritab something (optional)</div>
-    <div class="lang-row">
-      <button class="lang-btn active" data-lang="fr" onclick="setLang(this)">FR</button>
-      <button class="lang-btn" data-lang="ar" onclick="setLang(this)">عر</button>
-      <button class="lang-btn" data-lang="en" onclick="setLang(this)">EN</button>
-    </div>
     <div class="question-row">
       <input
         type="text"
         id="questionInput"
         class="question-input"
-        placeholder="What's the history here? / C'est quoi ça?"
+        placeholder="What's the history here? / C'est quoi ça? / Chno had shi?"
       />
-      <button class="btn-mic" id="micBtn" title="Hold to speak">
-        <svg id="micIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-          <line x1="12" y1="19" x2="12" y2="23"/>
-          <line x1="8" y1="23" x2="16" y2="23"/>
-        </svg>
-      </button>
     </div>
   </div>
 
@@ -457,15 +393,6 @@
 <script>
   let selectedImage = null;
   let currentResponseText = "";
-  let recognition = null;
-  let isRecording = false;
-  let selectedLang = "fr";
-
-  function setLang(btn) {
-    document.querySelectorAll(".lang-btn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    selectedLang = btn.dataset.lang;
-  }
 
   // Image selection & compression
   document.getElementById("cameraInput").addEventListener("change", function (e) {
@@ -590,57 +517,6 @@
     window.speechSynthesis.speak(utterance);
   }
 
-  // Voice input — Web Speech API with correct language per button
-  const micBtn = document.getElementById("micBtn");
-  const langMap = { fr: "fr-FR", ar: "ar-MA", en: "en-US" };
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (SpeechRecognition) {
-    let recognition = null;
-
-    function startRecognition() {
-      recognition = new SpeechRecognition();
-      recognition.lang = langMap[selectedLang] || "fr-FR";
-      recognition.continuous = false;
-      recognition.interimResults = false;
-
-      recognition.onresult = e => {
-        document.getElementById("questionInput").value = e.results[0][0].transcript;
-      };
-
-      recognition.onend = () => {
-        isRecording = false;
-        micBtn.classList.remove("recording");
-      };
-
-      recognition.onerror = e => {
-        isRecording = false;
-        micBtn.classList.remove("recording");
-        if (e.error !== "no-speech") {
-          const errorCard = document.getElementById("errorCard");
-          errorCard.style.display = "block";
-          errorCard.textContent = "Mic error: " + e.error + " — try again.";
-          setTimeout(() => { errorCard.style.display = "none"; }, 3000);
-        }
-      };
-
-      recognition.start();
-      isRecording = true;
-      micBtn.classList.add("recording");
-    }
-
-    micBtn.addEventListener("click", () => {
-      if (isRecording) {
-        recognition.stop();
-      } else {
-        startRecognition();
-      }
-    });
-
-  } else {
-    micBtn.style.opacity = "0.4";
-    micBtn.title = "Voice not supported in this browser";
-  }
 
   // Load TTS voices
   window.speechSynthesis.onvoiceschanged = function () {
