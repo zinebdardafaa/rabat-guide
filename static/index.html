@@ -343,7 +343,7 @@
 
 <header>
   <h1>Ritab</h1>
-  <p>Point your camera — Nour tells the story</p>
+  <p>Point your camera — Ritab tells the story</p>
 </header>
 
 <main>
@@ -370,7 +370,7 @@
   </div>
 
   <div class="question-section">
-    <div class="question-label">Ask Nour something (optional)</div>
+    <div class="question-label">Ask Ritab something (optional)</div>
     <div class="question-row">
       <input
         type="text"
@@ -390,12 +390,12 @@
   </div>
 
   <button class="btn-submit" id="submitBtn" disabled onclick="analyze()">
-    Ask Nour →
+    Ask Ritab →
   </button>
 
   <div class="loading" id="loading">
     <div class="spinner"></div>
-    <p>Nour is thinking…</p>
+    <p>Ritab is thinking…</p>
   </div>
 
   <div class="error-card" id="errorCard"></div>
@@ -404,7 +404,7 @@
     <div class="nour-header">
       <div class="nour-avatar">N</div>
       <div>
-        <div class="nour-name">Nour</div>
+        <div class="nour-name">Ritab</div>
         <div class="nour-title">Local guide · Rabat</div>
       </div>
     </div>
@@ -420,7 +420,7 @@
   </div>
 
   <div class="tip-bar">
-    <strong>Tip:</strong> Ask in any language — English, French, or Darija. Nour will reply in the same language.
+    <strong>Tip:</strong> Ask in any language — English, French, or Darija. Ritab will reply in the same language.
   </div>
 </main>
 
@@ -507,7 +507,7 @@
       const errorCard = document.getElementById("errorCard");
       errorCard.style.display = "block";
       errorCard.textContent =
-        "Oops — couldn't reach Nour right now. Check your internet and try again.\n" +
+        "Oops — couldn't reach Ritab right now. Check your internet and try again.\n" +
         "Problème de connexion, réessayez.\n" +
         "(" + err.message + ")";
     } finally {
