@@ -600,7 +600,12 @@
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioChunks = [];
-      mediaRecorder = new MediaRecorder(stream);
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : "audio/mp4";
+      mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
       mediaRecorder.onstop = async () => {
         stream.getTracks().forEach(t => t.stop());
@@ -608,10 +613,11 @@
         micBtn.classList.add("recording");
 
         try {
+          const mimeType = blob.type || "audio/webm";
+          const ext = mimeType.includes("mp4") ? "mp4" : "webm";
           const form = new FormData();
-          form.append("audio", blob, "recording.webm");
-          form.append("language", selectedLang);
-          const res = await fetch("/transcribe", { method: "POST", body: form });
+          form.append("audio", blob, `recording.${ext}`);
+          const res = await fetch(`/transcribe?language=${selectedLang}`, { method: "POST", body: form });
           if (!res.ok) throw new Error("Transcription failed");
           const data = await res.json();
           document.getElementById("questionInput").value = data.transcript;
