@@ -595,54 +595,85 @@
   let mediaRecorder = null;
   let audioChunks = [];
 
+  const MIC_HTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`;
+
+  function setMicState(state) {
+    // state: idle | recording | processing
+    micBtn.classList.toggle("recording", state === "recording");
+    if (state === "processing") micBtn.innerHTML = `<span style="font-size:0.7rem;font-weight:700">...</span>`;
+    else micBtn.innerHTML = MIC_HTML;
+  }
+
+  function showMicError(msg) {
+    const errorCard = document.getElementById("errorCard");
+    errorCard.style.display = "block";
+    errorCard.textContent = "Mic: " + msg;
+    setTimeout(() => { errorCard.style.display = "none"; }, 4000);
+  }
+
   async function startRecording() {
     if (isRecording) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioChunks = [];
+
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         ? "audio/webm;codecs=opus"
         : MediaRecorder.isTypeSupported("audio/webm")
         ? "audio/webm"
         : "audio/mp4";
+
       mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+
       mediaRecorder.onstop = async () => {
         stream.getTracks().forEach(t => t.stop());
-        const blob = new Blob(audioChunks, { type: "audio/webm" });
-        micBtn.classList.add("recording");
+        setMicState("processing");
+
+        if (audioChunks.length === 0) {
+          showMicError("No audio captured. Tap mic, speak, tap again.");
+          setMicState("idle");
+          isRecording = false;
+          return;
+        }
+
+        // Use the actual mimeType the recorder used
+        const actualMime = mediaRecorder.mimeType || mimeType;
+        const ext = actualMime.includes("mp4") ? "mp4" : "webm";
+        const blob = new Blob(audioChunks, { type: actualMime });
 
         try {
-          const mimeType = blob.type || "audio/webm";
-          const ext = mimeType.includes("mp4") ? "mp4" : "webm";
           const form = new FormData();
           form.append("audio", blob, `recording.${ext}`);
           const res = await fetch(`/transcribe?language=${selectedLang}`, { method: "POST", body: form });
-          if (!res.ok) throw new Error("Transcription failed");
+          if (!res.ok) {
+            const detail = await res.text();
+            throw new Error(detail);
+          }
           const data = await res.json();
           document.getElementById("questionInput").value = data.transcript;
         } catch (err) {
-          document.getElementById("questionInput").placeholder = "Couldn't hear that, try again";
+          showMicError(err.message);
         } finally {
           isRecording = false;
-          micBtn.classList.remove("recording");
+          setMicState("idle");
         }
       };
+
       mediaRecorder.start();
       isRecording = true;
-      micBtn.classList.add("recording");
+      setMicState("recording");
+
     } catch (err) {
-      alert("Microphone access denied. Please allow mic access and try again.");
+      showMicError("Mic access denied — allow microphone in browser settings.");
+      isRecording = false;
     }
   }
 
   function stopRecording() {
-    if (mediaRecorder && mediaRecorder.state !== "inactive") {
-      mediaRecorder.stop();
-    }
+    if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
   }
 
-  // Tap to start, tap again to stop
   micBtn.addEventListener("click", () => {
     if (isRecording) stopRecording();
     else startRecording();
