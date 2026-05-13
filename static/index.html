@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>Rabat Guide — Nour</title>
+  <title>Ritab</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -342,8 +342,8 @@
 <body>
 
 <header>
-  <h1>Rabat Guide</h1>
-  <p>Your local guide Nour — point, shoot, discover</p>
+  <h1>Ritab</h1>
+  <p>Point your camera — Nour tells the story</p>
 </header>
 
 <main>
@@ -516,29 +516,40 @@
     }
   }
 
-  // Text-to-speech
+  // Text-to-speech toggle
+  let isSpeaking = false;
+
+  const LISTEN_HTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> Listen`;
+  const STOP_HTML  = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg> Stop`;
+
   function readAloud() {
+    const btn = document.getElementById("listenBtn");
+
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      isSpeaking = false;
+      btn.innerHTML = LISTEN_HTML;
+      return;
+    }
+
     if (!currentResponseText) return;
-    window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(currentResponseText);
     utterance.rate = 0.92;
     utterance.pitch = 1.05;
 
-    // Pick a French or English voice based on content
     const voices = window.speechSynthesis.getVoices();
     const frenchVoice = voices.find(v => v.lang.startsWith("fr"));
     const englishVoice = voices.find(v => v.lang.startsWith("en"));
-
-    // Simple heuristic: if response starts with French words, use French voice
     const looksLikeFrench = /\b(le|la|les|un|une|des|vous|nous|est|sont|c'est|ça)\b/i.test(currentResponseText.slice(0, 80));
     if (looksLikeFrench && frenchVoice) utterance.voice = frenchVoice;
     else if (englishVoice) utterance.voice = englishVoice;
 
-    const btn = document.getElementById("listenBtn");
-    btn.textContent = "Speaking…";
-    utterance.onend = () => { btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> Listen`; };
+    utterance.onend = () => { isSpeaking = false; btn.innerHTML = LISTEN_HTML; };
+    utterance.onerror = () => { isSpeaking = false; btn.innerHTML = LISTEN_HTML; };
 
+    isSpeaking = true;
+    btn.innerHTML = STOP_HTML;
     window.speechSynthesis.speak(utterance);
   }
 
