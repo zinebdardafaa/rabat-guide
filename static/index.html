@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Rabat Guide — Nour</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --terracotta: #C1622F;
+      --deep-blue: #1B3A5C;
+      --warm-white: #FAF7F2;
+      --gold: #D4A843;
+      --text-dark: #1a1a1a;
+      --text-mid: #555;
+      --card-bg: #ffffff;
+      --shadow: 0 4px 24px rgba(0,0,0,0.10);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--warm-white);
+      color: var(--text-dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      width: 100%;
+      background: var(--deep-blue);
+      padding: 18px 20px 14px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      color: var(--gold);
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    header p {
+      color: rgba(255,255,255,0.7);
+      font-size: 0.78rem;
+      margin-top: 2px;
+    }
+
+    main {
+      width: 100%;
+      max-width: 480px;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Camera section */
+    .camera-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .preview-box {
+      width: 100%;
+      aspect-ratio: 4/3;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #e8e0d5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed #c9bfb0;
+      position: relative;
+    }
+
+    .preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+      border-radius: 14px;
+    }
+
+    .preview-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: #a89f95;
+    }
+
+    .preview-placeholder svg {
+      width: 48px;
+      height: 48px;
+      opacity: 0.5;
+    }
+
+    .preview-placeholder p {
+      font-size: 0.85rem;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    input[type="file"] { display: none; }
+
+    .btn-camera {
+      width: 100%;
+      padding: 16px;
+      background: var(--terracotta);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: background 0.2s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-camera:active { transform: scale(0.98); background: #a8522a; }
+
+    /* Question section */
+    .question-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .question-label {
+      font-size: 0.82rem;
+      color: var(--text-mid);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .question-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .question-input {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1.5px solid #ddd;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      outline: none;
+      background: white;
+      transition: border-color 0.2s;
+    }
+
+    .question-input:focus { border-color: var(--terracotta); }
+    .question-input::placeholder { color: #bbb; }
+
+    .btn-mic {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: 1.5px solid #ddd;
+      background: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-mic.recording {
+      background: #fee2e2;
+      border-color: #ef4444;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
+    .btn-mic svg { width: 20px; height: 20px; }
+
+    /* Submit button */
+    .btn-submit {
+      width: 100%;
+      padding: 16px;
+      background: var(--deep-blue);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-submit:disabled {
+      background: #b0bcc8;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-submit:not(:disabled):active { transform: scale(0.98); background: #152e4a; }
+
+    /* Loading state */
+    .loading {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 24px;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #e0d9d0;
+      border-top-color: var(--terracotta);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading p { color: var(--text-mid); font-size: 0.9rem; }
+
+    /* Response card */
+    .response-card {
+      display: none;
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      border-left: 4px solid var(--gold);
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .nour-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .nour-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--terracotta), var(--gold));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .nour-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--deep-blue);
+    }
+
+    .nour-title {
+      font-size: 0.75rem;
+      color: var(--text-mid);
+    }
+
+    .response-text {
+      font-size: 0.97rem;
+      line-height: 1.65;
+      color: var(--text-dark);
+      white-space: pre-wrap;
+    }
+
+    .btn-listen {
+      margin-top: 14px;
+      padding: 10px 18px;
+      background: transparent;
+      border: 1.5px solid var(--deep-blue);
+      color: var(--deep-blue);
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-listen:active { background: var(--deep-blue); color: white; }
+
+    /* Error */
+    .error-card {
+      display: none;
+      background: #fff5f5;
+      border: 1.5px solid #fca5a5;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 0.9rem;
+      color: #b91c1c;
+      line-height: 1.5;
+    }
+
+    /* Tips */
+    .tip-bar {
+      background: #f0ebe3;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.82rem;
+      color: var(--text-mid);
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .tip-bar strong { color: var(--terracotta); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Rabat Guide</h1>
+  <p>Your local guide Nour — point, shoot, discover</p>
+</header>
+
+<main>
+  <div class="camera-section">
+    <div class="preview-box" id="previewBox">
+      <div class="preview-placeholder" id="placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        <p>Take a photo of any<br/>landmark in Rabat</p>
+      </div>
+      <img id="previewImg" alt="Preview" />
+    </div>
+
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" />
+    <button class="btn-camera" onclick="document.getElementById('cameraInput').click()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      Take a Photo
+    </button>
+  </div>
+
+  <div class="question-section">
+    <div class="question-label">Ask Nour something (optional)</div>
+    <div class="question-row">
+      <input
+        type="text"
+        id="questionInput"
+        class="question-input"
+        placeholder="What's the history here? / C'est quoi ça?"
+      />
+      <button class="btn-mic" id="micBtn" title="Hold to speak">
+        <svg id="micIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <button class="btn-submit" id="submitBtn" disabled onclick="analyze()">
+    Ask Nour →
+  </button>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>Nour is thinking…</p>
+  </div>
+
+  <div class="error-card" id="errorCard"></div>
+
+  <div class="response-card" id="responseCard">
+    <div class="nour-header">
+      <div class="nour-avatar">N</div>
+      <div>
+        <div class="nour-name">Nour</div>
+        <div class="nour-title">Local guide · Rabat</div>
+      </div>
+    </div>
+    <div class="response-text" id="responseText"></div>
+    <button class="btn-listen" id="listenBtn" onclick="readAloud()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+      </svg>
+      Listen
+    </button>
+  </div>
+
+  <div class="tip-bar">
+    <strong>Tip:</strong> Ask in any language — English, French, or Darija. Nour will reply in the same language.
+  </div>
+</main>
+
+<script>
+  let selectedImage = null;
+  let currentResponseText = "";
+  let recognition = null;
+  let isRecording = false;
+
+  // Image selection & compression
+  document.getElementById("cameraInput").addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      const img = new Image();
+      img.onload = function () {
+        const canvas = document.createElement("canvas");
+        const MAX = 1024;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        const compressed = canvas.toDataURL("image/jpeg", 0.82);
+        selectedImage = compressed;
+
+        // Show preview
+        const previewImg = document.getElementById("previewImg");
+        previewImg.src = compressed;
+        previewImg.style.display = "block";
+        document.getElementById("placeholder").style.display = "none";
+        document.getElementById("submitBtn").disabled = false;
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Analyze
+  async function analyze() {
+    if (!selectedImage) return;
+
+    const question = document.getElementById("questionInput").value.trim();
+
+    document.getElementById("submitBtn").disabled = true;
+    document.getElementById("loading").style.display = "flex";
+    document.getElementById("responseCard").style.display = "none";
+    document.getElementById("errorCard").style.display = "none";
+
+    try {
+      // Strip data URL prefix
+      const base64 = selectedImage.split(",")[1];
+
+      const res = await fetch("/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image_base64: base64,
+          image_type: "image/jpeg",
+          question: question,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || "Something went wrong");
+      }
+
+      const data = await res.json();
+      currentResponseText = data.response;
+
+      document.getElementById("responseText").textContent = currentResponseText;
+      document.getElementById("responseCard").style.display = "block";
+
+      // Auto scroll to response
+      document.getElementById("responseCard").scrollIntoView({ behavior: "smooth", block: "start" });
+
+    } catch (err) {
+      const errorCard = document.getElementById("errorCard");
+      errorCard.style.display = "block";
+      errorCard.textContent =
+        "Oops — couldn't reach Nour right now. Check your internet and try again.\n" +
+        "Problème de connexion, réessayez.\n" +
+        "(" + err.message + ")";
+    } finally {
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("submitBtn").disabled = false;
+    }
+  }
+
+  // Text-to-speech
+  function readAloud() {
+    if (!currentResponseText) return;
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(currentResponseText);
+    utterance.rate = 0.92;
+    utterance.pitch = 1.05;
+
+    // Pick a French or English voice based on content
+    const voices = window.speechSynthesis.getVoices();
+    const frenchVoice = voices.find(v => v.lang.startsWith("fr"));
+    const englishVoice = voices.find(v => v.lang.startsWith("en"));
+
+    // Simple heuristic: if response starts with French words, use French voice
+    const looksLikeFrench = /\b(le|la|les|un|une|des|vous|nous|est|sont|c'est|ça)\b/i.test(currentResponseText.slice(0, 80));
+    if (looksLikeFrench && frenchVoice) utterance.voice = frenchVoice;
+    else if (englishVoice) utterance.voice = englishVoice;
+
+    const btn = document.getElementById("listenBtn");
+    btn.textContent = "Speaking…";
+    utterance.onend = () => { btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> Listen`; };
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  // Voice input (Web Speech API)
+  const micBtn = document.getElementById("micBtn");
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = ""; // Auto-detect
+
+    recognition.onresult = function (e) {
+      const transcript = e.results[0][0].transcript;
+      document.getElementById("questionInput").value = transcript;
+    };
+
+    recognition.onend = function () {
+      isRecording = false;
+      micBtn.classList.remove("recording");
+    };
+
+    micBtn.addEventListener("click", function () {
+      if (isRecording) {
+        recognition.stop();
+      } else {
+        isRecording = true;
+        micBtn.classList.add("recording");
+        recognition.start();
+      }
+    });
+  } else {
+    micBtn.title = "Voice input not supported in this browser";
+    micBtn.style.opacity = "0.4";
+  }
+
+  // Load TTS voices
+  window.speechSynthesis.onvoiceschanged = function () {
+    window.speechSynthesis.getVoices();
+  };
+</script>
+
+</body>
+</html>
