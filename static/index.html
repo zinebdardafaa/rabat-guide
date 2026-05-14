@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>Ritab</title>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Ritab" />
+  <meta name="theme-color" content="#1B3A5C" />
+  <link rel="manifest" href="/manifest.json" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -350,6 +355,10 @@
   <p>Point your camera — Ritab tells the story</p>
 </header>
 
+<div id="wakingBanner" style="display:none;background:#fef3c7;color:#92400e;text-align:center;padding:10px 16px;font-size:0.85rem;font-weight:500;">
+  Ritab is waking up — first load takes ~30 seconds ☕
+</div>
+
 <main>
   <div class="camera-section">
     <div class="preview-box" id="previewBox">
@@ -542,6 +551,7 @@
     document.getElementById("loading").style.display = "flex";
     document.getElementById("responseCard").style.display = "none";
     document.getElementById("errorCard").style.display = "none";
+    startWakeTimer();
 
     try {
       // Strip data URL prefix
@@ -579,6 +589,7 @@
         "Problème de connexion, réessayez.\n" +
         "(" + err.message + ")";
     } finally {
+      clearWakeTimer();
       document.getElementById("loading").style.display = "none";
       document.getElementById("submitBtn").disabled = false;
     }
@@ -642,6 +653,18 @@
     window.speechSynthesis.speak(utterance);
   }
 
+
+  // Show waking banner if first request is slow
+  let wakeTimer = null;
+  function startWakeTimer() {
+    wakeTimer = setTimeout(() => {
+      document.getElementById("wakingBanner").style.display = "block";
+    }, 5000);
+  }
+  function clearWakeTimer() {
+    clearTimeout(wakeTimer);
+    document.getElementById("wakingBanner").style.display = "none";
+  }
 
   // Load TTS voices
   window.speechSynthesis.onvoiceschanged = function () {
