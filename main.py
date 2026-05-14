@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import anthropic
-import openai
+from groq import Groq
 import os
 from dotenv import load_dotenv
 
@@ -19,7 +19,7 @@ app.add_middleware(
 )
 
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 SYSTEM_PROMPT = """You are Ritab, a warm and passionate local guide from Rabat, Morocco. You grew up in this city and know every corner of it — the history, the gossip, the best spots, the hidden stories. You speak like a friend, not a textbook. You're a woman, funny, real, and full of love for your city.
 
@@ -131,8 +131,8 @@ async def analyze(req: AnalyzeRequest):
 async def transcribe(audio: UploadFile = File(...), language: str = Query("fr")):
     try:
         audio_bytes = await audio.read()
-        transcript = openai_client.audio.transcriptions.create(
-            model="whisper-1",
+        transcript = groq_client.audio.transcriptions.create(
+            model="whisper-large-v3-turbo",
             file=(audio.filename, audio_bytes, audio.content_type),
             language=language,
         )

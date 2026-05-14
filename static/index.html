@@ -146,6 +146,36 @@
       letter-spacing: 0.5px;
     }
 
+    .lang-row { display: flex; gap: 8px; margin-bottom: 4px; }
+
+    .lang-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1.5px solid #ddd;
+      background: white;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-mid);
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .lang-btn.active { background: var(--terracotta); border-color: var(--terracotta); color: white; }
+
+    .btn-mic {
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      border: 1.5px solid #ddd;
+      background: white;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-mic.recording { background: #fee2e2; border-color: #ef4444; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+
 
     .question-row {
       display: flex;
@@ -345,13 +375,26 @@
 
   <div class="question-section">
     <div class="question-label">Ask Ritab something (optional)</div>
+    <div class="lang-row">
+      <button class="lang-btn active" data-lang="fr" onclick="setLang(this)">FR</button>
+      <button class="lang-btn" data-lang="ar" onclick="setLang(this)">عر</button>
+      <button class="lang-btn" data-lang="en" onclick="setLang(this)">EN</button>
+    </div>
     <div class="question-row">
       <input
         type="text"
         id="questionInput"
         class="question-input"
-        placeholder="What's the history here? / C'est quoi ça? / Chno had shi?"
+        placeholder="What's the history here? / C'est quoi ça?"
       />
+      <button class="btn-mic" id="micBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </button>
     </div>
   </div>
 
@@ -393,6 +436,67 @@
 <script>
   let selectedImage = null;
   let currentResponseText = "";
+  let selectedLang = "fr";
+  let isRecording = false;
+
+  function setLang(btn) {
+    document.querySelectorAll(".lang-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedLang = btn.dataset.lang;
+  }
+
+  // Mic — Groq Whisper (free, handles FR/AR/Darija/EN)
+  const micBtn = document.getElementById("micBtn");
+  let mediaRecorder = null;
+  let audioChunks = [];
+
+  micBtn.addEventListener("click", () => { isRecording ? stopRec() : startRec(); });
+
+  async function startRec() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunks = [];
+      const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus"
+                 : MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
+      mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        micBtn.innerHTML = `<span style="font-size:.7rem;font-weight:700">...</span>`;
+        const actualMime = mediaRecorder.mimeType || mime;
+        const ext = actualMime.includes("mp4") ? "mp4" : "webm";
+        const blob = new Blob(audioChunks, { type: actualMime });
+        try {
+          const form = new FormData();
+          form.append("audio", blob, `rec.${ext}`);
+          const res = await fetch(`/transcribe?language=${selectedLang}`, { method: "POST", body: form });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          document.getElementById("questionInput").value = data.transcript;
+        } catch (err) {
+          const ec = document.getElementById("errorCard");
+          ec.style.display = "block";
+          ec.textContent = "Mic error: " + err.message;
+          setTimeout(() => { ec.style.display = "none"; }, 4000);
+        } finally {
+          isRecording = false;
+          micBtn.classList.remove("recording");
+          micBtn.innerHTML = MIC_SVG;
+        }
+      };
+      mediaRecorder.start();
+      isRecording = true;
+      micBtn.classList.add("recording");
+    } catch (e) {
+      alert("Microphone access denied. Please allow mic access and try again.");
+    }
+  }
+
+  function stopRec() {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+  }
+
+  const MIC_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`;
 
   // Image selection & compression
   document.getElementById("cameraInput").addEventListener("change", function (e) {
