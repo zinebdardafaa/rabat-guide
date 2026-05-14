@@ -602,16 +602,37 @@
 
     if (!currentResponseText) return;
 
-    const utterance = new SpeechSynthesisUtterance(currentResponseText);
+    // Strip markdown so TTS doesn't read symbols aloud
+    const cleanText = currentResponseText
+      .replace(/\*\*(.*?)\*\*/gs, '$1')
+      .replace(/\*(.*?)\*/gs, '$1')
+      .replace(/__(.*?)__/gs, '$1')
+      .replace(/_(.*?)_/gs, '$1')
+      .replace(/\(([^)]*)\)/g, '$1')
+      .replace(/[*_#`~]/g, '')
+      .trim();
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.rate = 0.92;
     utterance.pitch = 1.05;
 
     const voices = window.speechSynthesis.getVoices();
-    const frenchVoice = voices.find(v => v.lang.startsWith("fr"));
-    const englishVoice = voices.find(v => v.lang.startsWith("en"));
-    const looksLikeFrench = /\b(le|la|les|un|une|des|vous|nous|est|sont|c'est|ça)\b/i.test(currentResponseText.slice(0, 80));
-    if (looksLikeFrench && frenchVoice) utterance.voice = frenchVoice;
-    else if (englishVoice) utterance.voice = englishVoice;
+    const looksLikeArabic = /[؀-ۿ]/.test(cleanText.slice(0, 120));
+    const looksLikeFrench = /\b(le|la|les|un|une|des|vous|nous|est|sont|c'est|ça)\b/i.test(cleanText.slice(0, 120));
+
+    if (looksLikeArabic) {
+      utterance.lang = "ar";
+      const arVoice = voices.find(v => v.lang.startsWith("ar"));
+      if (arVoice) utterance.voice = arVoice;
+    } else if (looksLikeFrench) {
+      utterance.lang = "fr-FR";
+      const frVoice = voices.find(v => v.lang.startsWith("fr"));
+      if (frVoice) utterance.voice = frVoice;
+    } else {
+      utterance.lang = "en-US";
+      const enVoice = voices.find(v => v.lang.startsWith("en"));
+      if (enVoice) utterance.voice = enVoice;
+    }
 
     utterance.onend = () => { isSpeaking = false; btn.innerHTML = LISTEN_HTML; };
     utterance.onerror = () => { isSpeaking = false; btn.innerHTML = LISTEN_HTML; };
